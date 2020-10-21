@@ -1,0 +1,5 @@
+__pycache__/ 
+chest_xray/
+*.png 
+archive.zip 
+.DS_Store 
