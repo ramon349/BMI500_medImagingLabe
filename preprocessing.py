@@ -1,7 +1,7 @@
 import tensorflow as tf 
 import os 
 
-BATCH_SIZE = 16 * 1
+BATCH_SIZE = 16 * 4
 IMAGE_SIZE = [180, 180]
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 def get_label(file_path):

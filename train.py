@@ -24,7 +24,7 @@ def show_batch( iterator):
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 GCS_PATH = "/Users/ramoncorrea/Desktop/BMI599/correa_imaging_experiments/"
-BATCH_SIZE = 16 * 1
+BATCH_SIZE = 16 * 4
 IMAGE_SIZE = [180, 180]
 EPOCHS = 25 
 train_dataset_path = os.path.abspath(os.path.join(GCS_PATH,'chest_xray/train/*/*'))
@@ -93,7 +93,7 @@ model.compile(
 history = model.fit(
     train_ds,
     steps_per_epoch=TRAIN_IMG_COUNT // BATCH_SIZE,
-    epochs=1,
+    epochs=25,
     validation_data=val_ds,
     validation_steps=VAL_IMG_COUNT // BATCH_SIZE,
     class_weight=class_weight,
