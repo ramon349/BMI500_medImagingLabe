@@ -22,8 +22,8 @@ def show_batch( iterator):
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE 
 
-#GCS_PATH = "/Users/ramoncorrea/Desktop/BMI599/correa_imaging_experiments"
-GCS_PATH = "/labs/colab/BMI500-Fall2020/"
+GCS_PATH = "/Users/ramoncorrea/Desktop/BMI599/correa_imaging_experiments"
+#GCS_PATH = "/labs/colab/BMI500-Fall2020/"
 
 BATCH_SIZE = 16 * 10
 IMAGE_SIZE = [180, 180]
@@ -35,61 +35,26 @@ filenames = tf.io.gfile.glob(train_dataset_path)
 filenames.extend(tf.io.gfile.glob(test_dataset_path) ) 
 train_filenames, val_filenames = train_test_split(filenames, test_size=0.2 )
 
-
 val_list_ds = tf.data.Dataset.from_tensor_slices(val_filenames)
-
-
 val_ds = val_list_ds.map(process_path, num_parallel_calls=AUTOTUNE)
 val_ds = val_ds.batch(BATCH_SIZE)
-
-
-
-
 VAL_IMG_COUNT = tf.data.experimental.cardinality(val_list_ds).numpy()
 print("Validating images count: " + str(VAL_IMG_COUNT))
-
-
-
-
-
-
 model = build_model(IMAGE_SIZE)
-
 METRICS = [
-    'accuracy',
-    tf.keras.metrics.Precision(name='precision'),
-    tf.keras.metrics.Recall(name='recall'),
     tf.keras.metrics.AUC(name='auc', curve='ROC'),
     tf.keras.metrics.AUC(name='pr', curve='PR')
 ]
 
+#load model as usual 
 model.compile(
     optimizer='adam',
     loss='binary_crossentropy',
     metrics=METRICS
 )
-
-model.load_weights("leaky_model.cpt.data-00000-of-00001")
-
-import pdb 
-pdb.set_trace()
-history = model.fit(
-    train_ds,
-    steps_per_epoch=TRAIN_IMG_COUNT // BATCH_SIZE,
-    epochs=25,
-    validation_data=val_ds,
-    validation_steps=VAL_IMG_COUNT // BATCH_SIZE,
-    class_weight=class_weight,
-    callbacks=[cp_callback]
-)
-
-fig, ax = plt.subplots(1, 4, figsize=(20, 3))
-ax = ax.ravel()
-for i, met in enumerate(['precision', 'recall', 'accuracy', 'auc', 'pr', 'loss']):
-    ax[i].plot(history.history[met])
-    ax[i].plot(history.history['val_' + met])
-    ax[i].set_title('Model {}'.format(met))
-    ax[i].set_xlabel('epochs')
-    ax[i].set_ylabel(met)
-    ax[i].legend(['train', 'val'])
-plt.savefig('leaky.png')
+weight_path = ["path1","path2"] # jason plug in actual paths 
+print("ROC AUC \t  PR AUC")
+for w in weight_path: 
+    #model.load_weights(w) # Jason uncomment this 
+    loss,ROC_auc,PR_AUC =  model.evaluate(val_ds,verbose=0) #eliminate verbosity so my output looks preety 
+    print("{} \t {}".format(ROC_auc,PR_AUC) )
