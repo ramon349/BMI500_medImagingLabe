@@ -22,7 +22,6 @@ def show_batch( iterator):
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 GCS_PATH = "/labs/colab/BMI500-Fall2020/"
-GCS_PATH = "/Users/ramoncorrea/Desktop/BMI599/correa_imaging_experiments"
 
 BATCH_SIZE = 16 * 10
 IMAGE_SIZE = [180, 180]
@@ -81,7 +80,9 @@ model = build_model(IMAGE_SIZE)
 METRICS = [
     'accuracy',
     tf.keras.metrics.Precision(name='precision'),
-    tf.keras.metrics.Recall(name='recall')
+    tf.keras.metrics.Recall(name='recall'),
+    tf.keras.metrics.AUC(name='auc', curve='ROC'),
+    tf.keras.metrics.AUC(name='pr', curve='PR')
 ]
 
 model.compile(
@@ -90,6 +91,10 @@ model.compile(
     metrics=METRICS
 )
 
+cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath='/labs/colab/BMI500-Fall2020/BMI500_jjeong/leaky_model.cpt',
+                                                 save_weights_only=True,
+                                                 verbose=1)
+
 history = model.fit(
     train_ds,
     steps_per_epoch=TRAIN_IMG_COUNT // BATCH_SIZE,
@@ -97,16 +102,16 @@ history = model.fit(
     validation_data=val_ds,
     validation_steps=VAL_IMG_COUNT // BATCH_SIZE,
     class_weight=class_weight,
+    callbacks=[cp_callback]
 )
 
 fig, ax = plt.subplots(1, 4, figsize=(20, 3))
 ax = ax.ravel()
-for i, met in enumerate(['precision', 'recall', 'accuracy', 'loss']):
+for i, met in enumerate(['precision', 'recall', 'accuracy', 'auc', 'pr', 'loss']):
     ax[i].plot(history.history[met])
     ax[i].plot(history.history['val_' + met])
     ax[i].set_title('Model {}'.format(met))
     ax[i].set_xlabel('epochs')
     ax[i].set_ylabel(met)
     ax[i].legend(['train', 'val'])
-plt.show()
-plt.savefig('pokemon.png')
+plt.savefig('leaky.png')

@@ -1,3 +1,6 @@
+# !/usr/bin/env python
+# coding: utf-8
+
 import re
 import os
 import numpy as np
@@ -6,7 +9,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from model_builder import build_model 
-from preprocessing import process_path,prepare_for_training
+from preprocessing import process_path, prepare_for_training
 
 def show_batch( iterator):
     plt.figure(figsize=(10,10))
@@ -21,26 +24,25 @@ def show_batch( iterator):
     plt.show()
 
 
-
-#This section estbalishes simple parameters 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 GCS_PATH = "/labs/colab/BMI500-Fall2020/"
-BATCH_SIZE = 16 * 10
+BATCH_SIZE = 16 * 4
 IMAGE_SIZE = [180, 180]
-EPOCHS = 25  
-# figuring out where the data is 
-train_dataset_path = os.path.abspath(os.path.join(GCS_PATH,'chest_xray/train/*/*'))
+EPOCHS = 25 
+train_dataset_path = os.path.abspath(os.path.join(GCS_PATH, 'chest_xray/train/*/*'))
 print(train_dataset_path)
-test_dataset_path = os.path.abspath(os.path.join(GCS_PATH,'chest_xray/val/*/*'))
+test_dataset_path = os.path.abspath(os.path.join(GCS_PATH, 'chest_xray/val/*/*'))
 filenames = tf.io.gfile.glob(train_dataset_path) 
 filenames.extend(tf.io.gfile.glob(test_dataset_path) ) 
 
-#generating train test splits using file naems 
 train_filenames, val_filenames = train_test_split(filenames, test_size=0.2)
+print(tf.__version__) 
 COUNT_NORMAL = len([filename for filename in train_filenames if "NORMAL" in filename])
-COUNT_PNEUMONIA = len([filename for filename in train_filenames if "PNEUMONIA" in filename])
+print("Normal images count in training set: " + str(COUNT_NORMAL))
 
-#build the actual dataset
+COUNT_PNEUMONIA = len([filename for filename in train_filenames if "PNEUMONIA" in filename])
+print("Pneumonia images count in training set: " + str(COUNT_PNEUMONIA))
+
 train_list_ds = tf.data.Dataset.from_tensor_slices(train_filenames)
 val_list_ds = tf.data.Dataset.from_tensor_slices(val_filenames)
 
@@ -48,8 +50,7 @@ val_list_ds = tf.data.Dataset.from_tensor_slices(val_filenames)
 train_ds = train_list_ds.map(process_path, num_parallel_calls=AUTOTUNE)
 train_ds = prepare_for_training(train_ds)
 val_ds = val_list_ds.map(process_path, num_parallel_calls=AUTOTUNE)
-val_ds = val_ds.batch(BATCH_SIZE) #this fucntion is needed so that evaluation is done batchwiise. 
-# code fials othersiwe 
+val_ds = val_ds.batch(BATCH_SIZE)
 
 
 test_list_ds = tf.data.Dataset.list_files(str(GCS_PATH + '/chest_xray/test/*/*'))
@@ -74,15 +75,14 @@ print('Weight for class 1: {:.2f}'.format(weight_for_1))
 
 initial_bias = np.log([COUNT_PNEUMONIA/COUNT_NORMAL])
 
-
-
-
 model = build_model(IMAGE_SIZE)
 
 METRICS = [
     'accuracy',
     tf.keras.metrics.Precision(name='precision'),
-    tf.keras.metrics.Recall(name='recall')
+    tf.keras.metrics.Recall(name='recall'),
+    tf.keras.metrics.AUC(name='auc', curve='ROC'),
+    tf.keras.metrics.AUC(name='pr', curve='PR')
 ]
 
 model.compile(
@@ -91,7 +91,11 @@ model.compile(
     metrics=METRICS
 )
 
-breakpoint()
+
+cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath='/labs/colab/BMI500-Fall2020/BMI500_jjeong/base_model.cpt',
+                                                 save_weights_only=True,
+                                                 verbose=1)
+
 history = model.fit(
     train_ds,
     steps_per_epoch=TRAIN_IMG_COUNT // BATCH_SIZE,
@@ -99,16 +103,16 @@ history = model.fit(
     validation_data=val_ds,
     validation_steps=VAL_IMG_COUNT // BATCH_SIZE,
     class_weight=class_weight,
+    callbacks=[cp_callback]
 )
 
 fig, ax = plt.subplots(1, 4, figsize=(20, 3))
 ax = ax.ravel()
-for i, met in enumerate(['precision', 'recall', 'accuracy', 'loss']):
+for i, met in enumerate(['precision', 'recall', 'accuracy', 'auc', 'pr', 'loss']):
     ax[i].plot(history.history[met])
     ax[i].plot(history.history['val_' + met])
     ax[i].set_title('Model {}'.format(met))
     ax[i].set_xlabel('epochs')
     ax[i].set_ylabel(met)
     ax[i].legend(['train', 'val'])
-plt.show()
-plt.savefig('pokemon.png')
+plt.savefig('base.png')
