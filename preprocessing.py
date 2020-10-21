@@ -30,7 +30,7 @@ def process_path(file_path):
 
 
 
-def prepare_for_training(ds, cache=True, shuffle_buffer_size=1000):
+def prepare_for_training(ds, cache=True, shuffle_buffer_size=100):
     # This is a small dataset, only load it once, and keep it in memory.
     # use `.cache(filename)` to cache preprocessing work for datasets that don't
     # fit in memory.

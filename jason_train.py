@@ -22,25 +22,25 @@ def show_batch( iterator):
 
 
 
-#This section estbalishes simple parameters 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
-GCS_PATH = "/labs/colab/BMI500-Fall2020/"
-BATCH_SIZE = 16 * 10
+GCS_PATH = "/Users/ramoncorrea/Desktop/BMI599/correa_imaging_experiments/"
+BATCH_SIZE = 16 * 4
 IMAGE_SIZE = [180, 180]
-EPOCHS = 25  
-# figuring out where the data is 
+EPOCHS = 25 
 train_dataset_path = os.path.abspath(os.path.join(GCS_PATH,'chest_xray/train/*/*'))
 print(train_dataset_path)
 test_dataset_path = os.path.abspath(os.path.join(GCS_PATH,'chest_xray/val/*/*'))
 filenames = tf.io.gfile.glob(train_dataset_path) 
 filenames.extend(tf.io.gfile.glob(test_dataset_path) ) 
 
-#generating train test splits using file naems 
 train_filenames, val_filenames = train_test_split(filenames, test_size=0.2)
+print(tf.__version__) 
 COUNT_NORMAL = len([filename for filename in train_filenames if "NORMAL" in filename])
-COUNT_PNEUMONIA = len([filename for filename in train_filenames if "PNEUMONIA" in filename])
+print("Normal images count in training set: " + str(COUNT_NORMAL))
 
-#build the actual dataset
+COUNT_PNEUMONIA = len([filename for filename in train_filenames if "PNEUMONIA" in filename])
+print("Pneumonia images count in training set: " + str(COUNT_PNEUMONIA))
+
 train_list_ds = tf.data.Dataset.from_tensor_slices(train_filenames)
 val_list_ds = tf.data.Dataset.from_tensor_slices(val_filenames)
 
@@ -48,8 +48,7 @@ val_list_ds = tf.data.Dataset.from_tensor_slices(val_filenames)
 train_ds = train_list_ds.map(process_path, num_parallel_calls=AUTOTUNE)
 train_ds = prepare_for_training(train_ds)
 val_ds = val_list_ds.map(process_path, num_parallel_calls=AUTOTUNE)
-val_ds = val_ds.batch(BATCH_SIZE) #this fucntion is needed so that evaluation is done batchwiise. 
-# code fials othersiwe 
+val_ds = val_ds.batch(BATCH_SIZE)
 
 
 test_list_ds = tf.data.Dataset.list_files(str(GCS_PATH + '/chest_xray/test/*/*'))
@@ -91,7 +90,6 @@ model.compile(
     metrics=METRICS
 )
 
-breakpoint()
 history = model.fit(
     train_ds,
     steps_per_epoch=TRAIN_IMG_COUNT // BATCH_SIZE,
