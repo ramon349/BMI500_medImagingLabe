@@ -5,7 +5,8 @@ import pandas as pd
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from leaky_model_builder import build_model 
+from leaky_model_builder import build_model  as leaky_builder 
+from model_builder import build_model as reg_builder
 from preprocessing import process_path,prepare_for_training
 
 def show_batch( iterator):
@@ -40,21 +41,22 @@ val_ds = val_list_ds.map(process_path, num_parallel_calls=AUTOTUNE)
 val_ds = val_ds.batch(BATCH_SIZE)
 VAL_IMG_COUNT = tf.data.experimental.cardinality(val_list_ds).numpy()
 print("Validating images count: " + str(VAL_IMG_COUNT))
-model = build_model(IMAGE_SIZE)
-METRICS = [
-    tf.keras.metrics.AUC(name='auc', curve='ROC'),
-    tf.keras.metrics.AUC(name='pr', curve='PR')
-]
-
-#load model as usual 
-model.compile(
-    optimizer='adam',
-    loss='binary_crossentropy',
-    metrics=METRICS
-)
-weight_path = ["path1","path2"] # jason plug in actual paths 
+weight_path = ["path1","path2"] # jason plug in actual paths   first leaky then regular 
+model_builders  = [leaky_builder,reg_builder]
 print("ROC AUC \t  PR AUC")
-for w in weight_path: 
+for i,w in enumerate(weight_path): 
+    model = model_builders[i](IMAGE_SIZE)
+    breakpoint()
+    METRICS = [
+        tf.keras.metrics.AUC(name='auc', curve='ROC'),
+        tf.keras.metrics.AUC(name='pr', curve='PR')
+    ]
+    #load model as usual 
+    model.compile(
+        optimizer='adam',
+        loss='binary_crossentropy',
+        metrics=METRICS
+    )
     #model.load_weights(w) # Jason uncomment this 
     loss,ROC_auc,PR_AUC =  model.evaluate(val_ds,verbose=0) #eliminate verbosity so my output looks preety 
     print("{} \t {}".format(ROC_auc,PR_AUC) )
