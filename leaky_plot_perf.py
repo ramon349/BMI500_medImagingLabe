@@ -20,7 +20,9 @@ def show_batch( iterator):
         plt.axis("off")
     plt.show()
 
-AUTOTUNE = tf.data.experimental.AUTOTUNE
+AUTOTUNE = tf.data.experimental.AUTOTUNE 
+
+#GCS_PATH = "/Users/ramoncorrea/Desktop/BMI599/correa_imaging_experiments"
 GCS_PATH = "/labs/colab/BMI500-Fall2020/"
 
 BATCH_SIZE = 16 * 10
@@ -31,8 +33,7 @@ print(train_dataset_path)
 test_dataset_path = os.path.abspath(os.path.join(GCS_PATH,'chest_xray/val/*/*'))
 filenames = tf.io.gfile.glob(train_dataset_path) 
 filenames.extend(tf.io.gfile.glob(test_dataset_path) ) 
-
-COUNT_NORMAL = len([filename for filename in train_filenames if "NORMAL" in filename])
+train_filenames, val_filenames = train_test_split(filenames, test_size=0.2 )
 
 
 val_list_ds = tf.data.Dataset.from_tensor_slices(val_filenames)
@@ -48,10 +49,7 @@ VAL_IMG_COUNT = tf.data.experimental.cardinality(val_list_ds).numpy()
 print("Validating images count: " + str(VAL_IMG_COUNT))
 
 
-weight_for_0 = (1 / COUNT_NORMAL)*(TRAIN_IMG_COUNT)/2.0 
-weight_for_1 = (1 / COUNT_PNEUMONIA)*(TRAIN_IMG_COUNT)/2.0
 
-class_weight = {0: weight_for_0, 1: weight_for_1}
 
 
 
@@ -71,7 +69,7 @@ model.compile(
     metrics=METRICS
 )
 
-model.load_weights("/labs/colab/BMI500-Fall2020/BMI500_jjeong/leaky_model.cpt.data-00000-of-00001")
+model.load_weights("leaky_model.cpt.data-00000-of-00001")
 
 import pdb 
 pdb.set_trace()
