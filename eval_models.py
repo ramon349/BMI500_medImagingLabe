@@ -41,7 +41,7 @@ val_ds = val_list_ds.map(process_path, num_parallel_calls=AUTOTUNE)
 val_ds = val_ds.batch(BATCH_SIZE)
 VAL_IMG_COUNT = tf.data.experimental.cardinality(val_list_ds).numpy()
 print("Validating images count: " + str(VAL_IMG_COUNT))
-weight_path = ["/labs/colab/BMI500-Fall2020/BMI500_jjeong/leaky_model.cpt.data-00000-of-00001","/labs/colab/BMI500-Fall2020/BMI500_jjeong/base_model.cpt.data-00000-of-00001"] # jason plug in actual paths   first leaky then regular 
+weight_path =['./leaky_model.cpt','./base_model.cpt']
 model_builders  = [leaky_builder,reg_builder]
 print("ROC AUC \t  PR AUC")
 
@@ -60,17 +60,12 @@ for i,w in enumerate(weight_path):
     )  
     y_pred = list() 
     t_labels =list() 
+    model.load_weights(w).expect_partial() # Jason uncomment this 
+    
     for img,labels in val_ds.take(-1): 
-    #model.load_weights(w) # Jason uncomment this 
         y_pred_keras = model.predict(img).ravel() 
         y_pred.extend(y_pred_keras)
         t_labels.extend(labels) 
     fpr_keras, tpr_keras, thresholds_keras = roc_curve(t_labels,y_pred) 
-    plt.plot(fpr_keras,tpr_keras)
     loss,ROC_auc,PR_AUC =  model.evaluate(val_ds,verbose=0) #eliminate verbosity so my output looks preety 
     print("{} \t {}".format(ROC_auc,PR_AUC) )
-plt.legend(['leaky','default'])
-plt.title("AUC of models") 
-plt.xlabel("FPR") 
-plt.ylabel("TPR")
-plt.savefig("AUC chart")
