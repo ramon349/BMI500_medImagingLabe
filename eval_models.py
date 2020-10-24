@@ -44,8 +44,6 @@ print("Validating images count: " + str(VAL_IMG_COUNT))
 weight_path =['./leaky_model.cpt','./base_model.cpt']
 model_builders  = [leaky_builder,reg_builder]
 print("ROC AUC \t  PR AUC")
-
-
 for i,w in enumerate(weight_path): 
     model = model_builders[i](IMAGE_SIZE)
     METRICS = [
